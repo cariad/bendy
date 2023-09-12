@@ -1,0 +1,25 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[dev-packages]
+black = "*"
+flake8 = "*"
+isort = "*"
+mypy = "*"
+pytest = "*"
+pytest-cov = "*"
+shellcheck-py = "*"
+twine = "*"
+yamllint = "*"
+
+[packages]
+
+[requires]
+python_version = "3.11"
+
+[scripts]
+build = "./scripts/build.sh"
+lint = "./scripts/lint.sh"
+test = "./scripts/test.sh"
