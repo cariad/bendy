@@ -85,6 +85,21 @@ def draw_estimated_point(
     )
 
 
+@mark.parametrize(
+    "x, expect",
+    [
+        (100, [100]),
+    ],
+)
+def test_estimate_y(
+    cubic_bezier: CubicBezier,
+    x: float,
+    expect: list[float],
+) -> None:
+    estimates = cubic_bezier.estimate_y(x)
+    assert list(estimates) == expect
+
+
 def test_images(cubic_bezier: CubicBezier) -> None:
     draw_cubic_bezier(cubic_bezier, "s", 1)
     draw_cubic_bezier(cubic_bezier, "s", 2)
