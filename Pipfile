@@ -8,10 +8,12 @@ black = "*"
 flake8 = "*"
 isort = "*"
 mypy = "*"
+pillow = "*"
 pytest = "*"
 pytest-cov = "*"
 shellcheck-py = "*"
 twine = "*"
+types-pillow = "*"
 yamllint = "*"
 
 [packages]
