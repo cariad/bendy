@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterator
 
 from bendy.logging import logger
 from bendy.math import inverse_lerp, lerp
@@ -26,7 +26,7 @@ class CubicBezier:
         self,
         x: float,
         resolution: int = 100,
-    ) -> Iterable[float]:
+    ) -> Iterator[float]:
         """
         Yields every estimated y value for `x`.
 
@@ -56,7 +56,7 @@ class CubicBezier:
 
             previous = point
 
-    def lines(self, count: int) -> Iterable[tuple[Point, Point]]:
+    def lines(self, count: int) -> Iterator[tuple[Point, Point]]:
         """
         Calculates a set of lines that describe the curve.
 
@@ -77,7 +77,7 @@ class CubicBezier:
         self,
         count: int,
         start: int = 0,
-    ) -> Iterable[Point]:
+    ) -> Iterator[Point]:
         """
         Calculates a set of points that describe the curve.
 
