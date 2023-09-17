@@ -4,6 +4,7 @@
     "Bézier",
     "cimg",
     "codecov",
+    "lerp",
     "Pipfile",
     "venv"
   ]
