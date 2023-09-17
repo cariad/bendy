@@ -1,6 +1,7 @@
 from typing import Iterable
 
 from bendy.logging import logger
+from bendy.math import inverse_lerp, lerp
 from bendy.point import Point, add_points, multiply_point, x_is_between_points
 
 
@@ -36,20 +37,22 @@ class CubicBezier:
         logger.debug("Started estimating y for x %f", x)
 
         if x == self.a0[0]:
-            logger.debug(
-                "a0 x = %f so yielding y %f then stopping",
-                self.a0[0],
-                self.a0[1],
-            )
-
             yield self.a0[1]
+            return
+
+        if x == self.a3[0]:
+            yield self.a3[1]
             return
 
         previous = self.a0
 
-        for point in self.points(resolution, start=1):
-            if point[0] == x or x_is_between_points(x, previous, point):
+        for point in self.points(resolution + 1, start=1):
+            if point[0] == x:
                 yield point[1]
+
+            elif x_is_between_points(x, previous, point):
+                xt = inverse_lerp(previous[0], point[0], x)
+                yield lerp(previous[1], point[1], xt)
 
             previous = point
 
