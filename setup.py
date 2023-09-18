@@ -35,6 +35,9 @@ setup(
     classifiers=classifiers,
     description="Bezier curve calculator",
     include_package_data=True,
+    install_requires=[
+        "vecked~=1.1",
+    ],
     license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",

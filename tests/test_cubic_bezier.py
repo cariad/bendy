@@ -3,29 +3,30 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 from PIL.ImageDraw import ImageDraw as ImageDrawType
 from pytest import mark, raises
+from vecked import Vector2f
 
-from bendy import CubicBezier, Point
+from bendy import CubicBezier
 
 
 def draw_anchor(
     d: ImageDrawType,
-    point: Point,
+    point: Vector2f,
     color: tuple[int, int, int],
 ) -> None:
     size = 8
 
-    a = (point[0] - (size / 2), point[1] - (size / 2))
-    b = (point[0] + (size / 2), point[1] + (size / 2))
+    a = (point.x - (size / 2), point.y - (size / 2))
+    b = (point.x + (size / 2), point.y + (size / 2))
 
     d.ellipse([a, b], fill=color)
 
 
 def draw_anchor_line(
     d: ImageDrawType,
-    a: Point,
-    b: Point,
+    a: Vector2f,
+    b: Vector2f,
 ) -> None:
-    d.line((a, b), fill=(200, 200, 200), width=1)
+    d.line((a.vector, b.vector), fill=(200, 200, 200), width=1)
 
 
 def draw_cubic_bezier(c: CubicBezier, name: str, resolution: int) -> None:
@@ -52,7 +53,7 @@ def draw_cubic_bezier(c: CubicBezier, name: str, resolution: int) -> None:
 
     for x in range(0, width, 25):
         for y in c.estimate_y(x, resolution):
-            draw_estimated_point(draw, (x, y))
+            draw_estimated_point(draw, Vector2f(x, y))
 
     filename = "%s_r%i.png" % (name, resolution)
 
@@ -61,25 +62,25 @@ def draw_cubic_bezier(c: CubicBezier, name: str, resolution: int) -> None:
 
 def draw_curve_segment(
     d: ImageDrawType,
-    line: tuple[Point, Point],
+    line: tuple[Vector2f, Vector2f],
 ) -> None:
-    d.line(line, fill=(0, 0, 255), width=2)
+    d.line((line[0].vector, line[1].vector), fill=(0, 0, 255), width=2)
 
 
 def draw_estimated_point(
     d: ImageDrawType,
-    point: Point,
+    point: Vector2f,
 ) -> None:
     size = 10
 
     d.line(
-        [(point[0], point[1] - size), (point[0], point[1] + size)],
+        [(point.x, point.y - size), (point.x, point.y + size)],
         fill=(255, 0, 255),
         width=1,
     )
 
     d.line(
-        [(point[0] - size, point[1]), (point[0] + size, point[1])],
+        [(point.x - size, point.y), (point.x + size, point.y)],
         fill=(255, 0, 255),
         width=1,
     )
@@ -147,12 +148,12 @@ def test_points__start(cubic_bezier: CubicBezier) -> None:
 @mark.parametrize(
     "t, expect",
     [
-        (0.0, (100, 100)),
-        (0.5, (250, 250)),
-        (1.0, (400, 400)),
+        (0.0, Vector2f(100, 100)),
+        (0.5, Vector2f(250, 250)),
+        (1.0, Vector2f(400, 400)),
     ],
 )
-def test_solve(cubic_bezier: CubicBezier, t: float, expect: Point) -> None:
+def test_solve(cubic_bezier: CubicBezier, t: float, expect: Vector2f) -> None:
     assert cubic_bezier.solve(t) == expect
 
 
