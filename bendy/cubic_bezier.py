@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Iterator
 
 from vecked import Vector2f
@@ -40,11 +42,9 @@ class CubicBezier:
 
         if x == self.a0.x:
             yield self.a0.y
-            return
 
         if x == self.a3.x:
             yield self.a3.y
-            return
 
         previous = self.a0
 
@@ -57,6 +57,31 @@ class CubicBezier:
                 yield lerp(previous.y, point.y, xt)
 
             previous = point
+
+    def join(self, control: Vector2f, anchor: Vector2f) -> CubicBezier:
+        """
+        Creates a new cubic Bézier curve at the end of this one.
+        """
+
+        return CubicBezier(
+            self.a3,
+            self.a2.reflect_across(self.a3).vector,
+            control,
+            anchor,
+        )
+
+    def join_to_start(self, other: CubicBezier) -> CubicBezier:
+        """
+        Creates a new cubic Bézier curve that connects the end of this curve to
+        the start of another.
+        """
+
+        return CubicBezier(
+            self.a3,
+            self.a2.reflect_across(self.a3).vector,
+            other.a1.reflect_across(other.a0).vector,
+            other.a0,
+        )
 
     def lines(self, count: int) -> Iterator[tuple[Vector2f, Vector2f]]:
         """

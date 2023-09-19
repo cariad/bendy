@@ -29,17 +29,12 @@ def draw_anchor_line(
     d.line((a.vector, b.vector), fill=(200, 200, 200), width=1)
 
 
-def draw_cubic_bezier(c: CubicBezier, name: str, resolution: int) -> None:
-    width = 500
-
-    image = Image.new(
-        "RGB",
-        (width, 500),
-        (255, 255, 255),
-    )
-
-    draw = ImageDraw.Draw(image)
-
+def draw_cubic_bezier_curve_at(
+    c: CubicBezier,
+    draw: ImageDrawType,
+    resolution: int,
+    width: int,
+) -> None:
     draw_anchor(draw, c.a0, (255, 0, 0))
     draw_anchor(draw, c.a1, (255, 0, 0))
     draw_anchor(draw, c.a2, (255, 0, 0))
@@ -55,9 +50,39 @@ def draw_cubic_bezier(c: CubicBezier, name: str, resolution: int) -> None:
         for y in c.estimate_y(x, resolution):
             draw_estimated_point(draw, Vector2f(x, y))
 
-    filename = "%s_r%i.png" % (name, resolution)
 
-    image.save(Path("docs") / filename)
+def draw_cubic_bezier_curves(
+    cs: list[CubicBezier],
+    name: str,
+    resolution: int,
+) -> None:
+    for curve_count in range(1, len(cs) + 1):
+        width = 500
+
+        image = Image.new(
+            "RGB",
+            (width, 500),
+            (255, 255, 255),
+        )
+
+        draw = ImageDraw.Draw(image)
+
+        for curve_index in range(curve_count):
+            c = cs[curve_index]
+            draw_cubic_bezier_curve_at(
+                c,
+                draw,
+                resolution,
+                width,
+            )
+
+        filename = "%s_r%i_%i.png" % (
+            name,
+            resolution,
+            curve_count,
+        )
+
+        image.save(Path("docs") / filename)
 
 
 def draw_curve_segment(
@@ -102,11 +127,23 @@ def test_estimate_y(
 
 
 def test_images(cubic_bezier: CubicBezier) -> None:
-    draw_cubic_bezier(cubic_bezier, "s", 1)
-    draw_cubic_bezier(cubic_bezier, "s", 2)
-    draw_cubic_bezier(cubic_bezier, "s", 3)
-    draw_cubic_bezier(cubic_bezier, "s", 10)
-    draw_cubic_bezier(cubic_bezier, "s", 100)
+    draw_cubic_bezier_curves([cubic_bezier], "s", 1)
+    draw_cubic_bezier_curves([cubic_bezier], "s", 2)
+    draw_cubic_bezier_curves([cubic_bezier], "s", 3)
+    draw_cubic_bezier_curves([cubic_bezier], "s", 10)
+    draw_cubic_bezier_curves([cubic_bezier], "s", 100)
+
+    a = CubicBezier(
+        (150, 50),
+        (250, 40),
+        (200, 450),
+        (300, 400),
+    )
+
+    b = a.join(Vector2f(450, 100), Vector2f(250, 200))
+    c = b.join_to_start(a)
+
+    draw_cubic_bezier_curves([a, b, c], "figure8", 100)
 
 
 def test_lines__range(cubic_bezier: CubicBezier) -> None:
