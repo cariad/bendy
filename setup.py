@@ -36,7 +36,7 @@ setup(
     description="Bezier curve calculator",
     include_package_data=True,
     install_requires=[
-        "vecked~=1.1",
+        "vecked~=1.3",
     ],
     license="MIT",
     long_description=long_description,
