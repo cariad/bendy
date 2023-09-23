@@ -1,114 +1,136 @@
+from math import ceil, floor
 from pathlib import Path
 
 from PIL import Image, ImageDraw
-from PIL.ImageDraw import ImageDraw as ImageDrawType
 from pytest import mark, raises
-from vecked import Vector2f
+from vecked import Region2f, Vector2f
 
-from bendy import CubicBezier
-
-
-def draw_anchor(
-    d: ImageDrawType,
-    point: Vector2f,
-    color: tuple[int, int, int],
-) -> None:
-    size = 8
-
-    a = (point.x - (size / 2), point.y - (size / 2))
-    b = (point.x + (size / 2), point.y + (size / 2))
-
-    d.ellipse([a, b], fill=color)
+from bendy import CompositeCubicBezier, CubicBezier
 
 
-def draw_anchor_line(
-    d: ImageDrawType,
-    a: Vector2f,
-    b: Vector2f,
-) -> None:
-    d.line((a.vector, b.vector), fill=(200, 200, 200), width=1)
-
-
-def draw_cubic_bezier_curve_at(
-    c: CubicBezier,
-    draw: ImageDrawType,
-    resolution: int,
-    width: int,
-) -> None:
-    draw_anchor(draw, c.a0, (255, 0, 0))
-    draw_anchor(draw, c.a1, (255, 0, 0))
-    draw_anchor(draw, c.a2, (255, 0, 0))
-    draw_anchor(draw, c.a3, (255, 0, 0))
-
-    draw_anchor_line(draw, c.a0, c.a1)
-    draw_anchor_line(draw, c.a2, c.a3)
-
-    for line in c.lines(resolution):
-        draw_curve_segment(draw, line)
-
-    for x in range(0, width, 25):
-        for y in c.estimate_y(x, resolution):
-            draw_estimated_point(draw, Vector2f(x, y))
-
-
-def draw_cubic_bezier_curves(
-    cs: list[CubicBezier],
+def draw_composite_cubic_bezier_curve(
+    composite: CompositeCubicBezier,
     name: str,
     resolution: int,
 ) -> None:
-    for curve_count in range(1, len(cs) + 1):
-        width = 500
+    margin = 50
+    width = 500
 
+    position = Vector2f(margin, margin)
+    size = Vector2f(width, width) - position - position
+
+    region = Region2f(
+        position,
+        size,
+    )
+
+    for count in range(1, len(composite)):
         image = Image.new(
             "RGB",
-            (width, 500),
+            (width, width),
             (255, 255, 255),
         )
 
         draw = ImageDraw.Draw(image)
 
-        for curve_index in range(curve_count):
-            c = cs[curve_index]
-            draw_cubic_bezier_curve_at(
-                c,
-                draw,
-                resolution,
-                width,
-            )
+        composite.draw(
+            draw,
+            region,
+            count=count,
+            estimate_y=range(floor(composite.min.x), ceil(composite.max.x) + 1, 25),
+            resolution=resolution,
+        )
 
         filename = "%s_r%i_%i.png" % (
             name,
             resolution,
-            curve_count,
+            count,
         )
 
         image.save(Path("docs") / filename)
 
 
-def draw_curve_segment(
-    d: ImageDrawType,
-    line: tuple[Vector2f, Vector2f],
+def draw_cubic_bezier_curve(
+    curve: CubicBezier,
+    name: str,
+    resolution: int,
+    est_y: bool = True,
 ) -> None:
-    d.line((line[0].vector, line[1].vector), fill=(0, 0, 255), width=2)
+    margin = 50
+    width = 500
 
+    position = Vector2f(margin, margin)
+    size = Vector2f(width, width) - position - position
 
-def draw_estimated_point(
-    d: ImageDrawType,
-    point: Vector2f,
-) -> None:
-    size = 10
-
-    d.line(
-        [(point.x, point.y - size), (point.x, point.y + size)],
-        fill=(255, 0, 255),
-        width=1,
+    region = Region2f(
+        position,
+        size,
     )
 
-    d.line(
-        [(point.x - size, point.y), (point.x + size, point.y)],
-        fill=(255, 0, 255),
-        width=1,
+    image = Image.new(
+        "RGB",
+        (width, width),
+        (255, 255, 255),
     )
+
+    draw = ImageDraw.Draw(image)
+
+    estimate_y_range = (
+        range(
+            floor(curve.min.x),
+            ceil(curve.max.x) + 1,
+            25,
+        )
+        if est_y
+        else None
+    )
+
+    curve.draw(
+        draw,
+        region,
+        estimate_y=estimate_y_range,
+        resolution=resolution,
+    )
+
+    filename = "%s_r%i.png" % (
+        name,
+        resolution,
+    )
+
+    image.save(Path("docs") / filename)
+
+
+def test_draw(cubic_bezier: CubicBezier) -> None:
+    draw_cubic_bezier_curve(cubic_bezier, "s", 1)
+    draw_cubic_bezier_curve(cubic_bezier, "s", 2)
+    draw_cubic_bezier_curve(cubic_bezier, "s", 3)
+    draw_cubic_bezier_curve(cubic_bezier, "s", 10)
+    draw_cubic_bezier_curve(cubic_bezier, "s", 100)
+    draw_cubic_bezier_curve(cubic_bezier, "s-plain", 100, est_y=False)
+
+    figure_8 = CompositeCubicBezier(
+        CubicBezier(
+            (150, 50),
+            (250, 40),
+            (200, 450),
+            (300, 400),
+        )
+    )
+
+    figure_8.append(Vector2f(450, 100), Vector2f(250, 200))
+    figure_8.loop()
+
+    draw_composite_cubic_bezier_curve(figure_8, "figure8", 100)
+
+
+def test_draw__not_draw(cubic_bezier: CubicBezier) -> None:
+    with raises(TypeError) as ex:
+        cubic_bezier.draw(
+            "pizza",
+            Region2f(Vector2f(0, 0), Vector2f(1, 1)),
+        )
+
+    assert str(ex.value) == "image_draw is not PIL.ImageDraw"
 
 
 @mark.parametrize(
@@ -124,26 +146,6 @@ def test_estimate_y(
 ) -> None:
     estimates = cubic_bezier.estimate_y(x)
     assert list(estimates) == expect
-
-
-def test_images(cubic_bezier: CubicBezier) -> None:
-    draw_cubic_bezier_curves([cubic_bezier], "s", 1)
-    draw_cubic_bezier_curves([cubic_bezier], "s", 2)
-    draw_cubic_bezier_curves([cubic_bezier], "s", 3)
-    draw_cubic_bezier_curves([cubic_bezier], "s", 10)
-    draw_cubic_bezier_curves([cubic_bezier], "s", 100)
-
-    a = CubicBezier(
-        (150, 50),
-        (250, 40),
-        (200, 450),
-        (300, 400),
-    )
-
-    b = a.join(Vector2f(450, 100), Vector2f(250, 200))
-    c = b.join_to_start(a)
-
-    draw_cubic_bezier_curves([a, b, c], "figure8", 100)
 
 
 def test_lines__range(cubic_bezier: CubicBezier) -> None:
@@ -199,3 +201,7 @@ def test_solve__range(cubic_bezier: CubicBezier) -> None:
         cubic_bezier.solve(-1)
 
     assert str(ex.value) == "t (-1) must be >= 0.0 and <= 1.0"
+
+
+def test_str(cubic_bezier: CubicBezier) -> None:
+    assert str(cubic_bezier) == "((100, 100), (300, 50), (200, 450), (400, 400))"

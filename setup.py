@@ -34,9 +34,14 @@ setup(
     author_email="cariad@cariad.earth",
     classifiers=classifiers,
     description="Bezier curve calculator",
+    extras_require={
+        "draw": [
+            "pillow~=10.0",
+        ],
+    },
     include_package_data=True,
     install_requires=[
-        "vecked~=1.3",
+        "vecked~=1.4",
     ],
     license="MIT",
     long_description=long_description,
