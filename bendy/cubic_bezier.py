@@ -187,21 +187,27 @@ class CubicBezier:
         y_axis_min = floor(min_y)
         y_axis_max = floor(max_y + 1)
         y_axis_tick_count = 10
-        y_axis_tick_gap = floor((max_y - min_y) / y_axis_tick_count)
+        y_axis_tick_gap = max(floor((max_y - min_y) / y_axis_tick_count), 1)
+        y_axis_tick_width = 5
 
         for i in range(y_axis_min, y_axis_max, y_axis_tick_gap):
             draw_axis_line(
                 Vector2f(0, i),
                 Vector2f(0, i),
-                a_pixel_offset=Vector2f(-5, 0),
+                a_pixel_offset=Vector2f(-y_axis_tick_width, 0),
             )
 
             text = str(i)
-            bound = image_draw.textbbox((0, 0), text)
+            text_bounds = image_draw.textbbox((0, 0), text)
+            text_width = text_bounds[2] - text_bounds[0]
+            text_height = text_bounds[3] - text_bounds[1]
 
             draw_text(
-                Vector2f(-bound[2], i),
-                Vector2f(-10, -5),
+                Vector2f(0, i),
+                Vector2f(
+                    -text_width - y_axis_tick_width - 3,
+                    -(text_height / 2),
+                ),
                 text,
             )
 
@@ -217,21 +223,27 @@ class CubicBezier:
         x_axis_min = floor(min_x)
         x_axis_max = floor(max_x + 1)
         x_axis_tick_count = 10
-        x_axis_tick_gap = floor((max_x - min_x) / x_axis_tick_count)
+        x_axis_tick_gap = max(floor((max_x - min_x) / x_axis_tick_count), 1)
+        x_axis_tick_height = 5
 
         for i in range(x_axis_min, x_axis_max, x_axis_tick_gap):
             draw_axis_line(
                 Vector2f(i, 0),
                 Vector2f(i, 0),
-                b_pixel_offset=Vector2f(0, 5),
+                b_pixel_offset=Vector2f(0, x_axis_tick_height),
             )
 
             text = str(i)
-            bound = image_draw.textbbox((0, 0), text)
+            text_bounds = image_draw.textbbox((0, 0), text)
+            text_width = text_bounds[2] - text_bounds[0]
+            text_height = text_bounds[3] - text_bounds[1]
 
             draw_text(
-                Vector2f(i - (bound[2] / 2), 0),
-                Vector2f(0, 10),
+                Vector2f(i, 0),
+                Vector2f(
+                    -(text_width / 2),
+                    x_axis_tick_height + 4,
+                ),
                 text,
             )
 
