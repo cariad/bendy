@@ -5,49 +5,7 @@ from PIL import Image, ImageDraw
 from pytest import mark, raises
 from vecked import Region2f, Vector2f
 
-from bendy import CompositeCubicBezier, CubicBezier
-
-
-def draw_composite_cubic_bezier_curve(
-    composite: CompositeCubicBezier,
-    name: str,
-    resolution: int,
-    axis: bool = False,
-) -> None:
-    margin = 50
-    width = 500
-
-    position = Vector2f(margin, margin)
-    size = Vector2f(width, width) - position - position
-
-    # Flip upside-down so (0, 0) is at the bottom.
-    region = Region2f(position, size).upside_down()
-
-    for count in range(1, len(composite) + 1):
-        image = Image.new(
-            "RGB",
-            (width, width),
-            (255, 255, 255),
-        )
-
-        draw = ImageDraw.Draw(image)
-
-        composite.draw(
-            draw,
-            region,
-            axis=axis,
-            count=count,
-            estimate_y=range(floor(composite.min.x), ceil(composite.max.x) + 1, 25),
-            resolution=resolution,
-        )
-
-        filename = "%s_r%i_%i.png" % (
-            name,
-            resolution,
-            count,
-        )
-
-        image.save(Path("docs") / filename)
+from bendy import CubicBezier
 
 
 def draw_cubic_bezier_curve(
@@ -108,21 +66,6 @@ def test_draw(cubic_bezier: CubicBezier) -> None:
     draw_cubic_bezier_curve(cubic_bezier, "s", 100)
     draw_cubic_bezier_curve(cubic_bezier, "s-plain", 100, est_y=False)
     draw_cubic_bezier_curve(cubic_bezier, "s-axis", 100, axis=True)
-
-    figure_8 = CompositeCubicBezier(
-        CubicBezier(
-            (150, 50),
-            (250, 40),
-            (200, 450),
-            (300, 400),
-        )
-    )
-
-    figure_8.append(Vector2f(450, 100), Vector2f(250, 200))
-    figure_8.loop()
-
-    draw_composite_cubic_bezier_curve(figure_8, "figure8", 100)
-    draw_composite_cubic_bezier_curve(figure_8, "figure8-axis", 100, axis=True)
 
 
 def test_draw__not_draw(cubic_bezier: CubicBezier) -> None:
