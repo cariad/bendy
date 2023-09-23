@@ -1,4 +1,4 @@
-from typing import Any, Iterable
+from typing import Any, Iterable, Iterator
 
 from vecked import Region2f, Vector2f
 
@@ -59,6 +59,20 @@ class CompositeCubicBezier:
                 estimate_y=estimate_y,
                 resolution=resolution,
             )
+
+    def estimate_y(
+        self,
+        x: float,
+        resolution: int = 100,
+    ) -> Iterator[float]:
+        for curve in self._curves:
+            estimations = curve.estimate_y(
+                x,
+                resolution=resolution,
+            )
+
+            for y in estimations:
+                yield y
 
     @property
     def head(self) -> CubicBezier:
