@@ -33,11 +33,21 @@ class CompositeCubicBezier:
         self,
         image_draw: Any,
         pixel_bounds: Region2f,
+        axis: bool = True,
         count: int | None = None,
-        resolution: int = 100,
         estimate_y: Iterable[float] | None = None,
+        resolution: int = 100,
     ) -> None:
-        curve_bounds = self.bounds
+        curve_bounds = self.bounds.accommodate(Vector2f(0, 0))
+
+        if axis:
+            CubicBezier.draw_axis(
+                image_draw,
+                curve_bounds,
+                pixel_bounds,
+                self.min,
+                self.max,
+            )
 
         count = len(self._curves) if count is None else count
 
