@@ -41,7 +41,7 @@ setup(
     },
     include_package_data=True,
     install_requires=[
-        "vecked~=1.6",
+        "vecked~=1.7",
     ],
     license="MIT",
     long_description=long_description,
