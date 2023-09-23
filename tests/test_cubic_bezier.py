@@ -12,6 +12,7 @@ def draw_composite_cubic_bezier_curve(
     composite: CompositeCubicBezier,
     name: str,
     resolution: int,
+    axis: bool = False,
 ) -> None:
     margin = 50
     width = 500
@@ -34,6 +35,7 @@ def draw_composite_cubic_bezier_curve(
         composite.draw(
             draw,
             region,
+            axis=axis,
             count=count,
             estimate_y=range(floor(composite.min.x), ceil(composite.max.x) + 1, 25),
             resolution=resolution,
@@ -120,6 +122,7 @@ def test_draw(cubic_bezier: CubicBezier) -> None:
     figure_8.loop()
 
     draw_composite_cubic_bezier_curve(figure_8, "figure8", 100)
+    draw_composite_cubic_bezier_curve(figure_8, "figure8-axis", 100, axis=True)
 
 
 def test_draw__not_draw(cubic_bezier: CubicBezier) -> None:
@@ -127,6 +130,19 @@ def test_draw__not_draw(cubic_bezier: CubicBezier) -> None:
         cubic_bezier.draw(
             "pizza",
             Region2f(Vector2f(0, 0), Vector2f(1, 1)),
+        )
+
+    assert str(ex.value) == "image_draw is not PIL.ImageDraw"
+
+
+def test_draw_axis__not_draw() -> None:
+    with raises(TypeError) as ex:
+        CubicBezier.draw_axis(
+            "pizza",
+            Region2f(Vector2f(0, 0), Vector2f(1, 1)),
+            Region2f(Vector2f(0, 0), Vector2f(1, 1)),
+            Vector2f(0, 0),
+            Vector2f(0, 0),
         )
 
     assert str(ex.value) == "image_draw is not PIL.ImageDraw"
