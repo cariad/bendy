@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Iterator
+from typing import Any, Iterable, Iterator
 
-from vecked import Vector2f
+from vecked import Region2f, Vector2f
 
 from bendy.logging import logger
 from bendy.math import inverse_lerp, lerp
@@ -25,6 +25,100 @@ class CubicBezier:
         self.a1 = a1 if isinstance(a1, Vector2f) else Vector2f(a1[0], a1[1])
         self.a2 = a2 if isinstance(a2, Vector2f) else Vector2f(a2[0], a2[1])
         self.a3 = a3 if isinstance(a3, Vector2f) else Vector2f(a3[0], a3[1])
+
+    def __str__(self) -> str:
+        return "(%s, %s, %s, %s)" % (self.a0, self.a1, self.a2, self.a3)
+
+    @property
+    def bounds(self) -> Region2f:
+        return Region2f(
+            self.min,
+            self.max - self.min,
+        )
+
+    def draw(
+        self,
+        image_draw: Any,
+        pixel_bounds: Region2f,
+        curve_bounds: Region2f | None = None,
+        resolution: int = 100,
+        estimate_y: Iterable[float] | None = None,
+    ) -> None:
+        try:
+            from PIL.ImageDraw import ImageDraw
+        except ImportError:  # pragma: no cover
+            msg = "Install `bendy[draw]` to enable drawing."  # pragma: no cover
+            logger.error(msg)  # pragma: no cover
+            raise  # pragma: no cover
+
+        if not isinstance(image_draw, ImageDraw):
+            raise TypeError("image_draw is not PIL.ImageDraw")
+
+        curve_bounds = curve_bounds or self.bounds
+
+        def draw_anchor(p: Vector2f) -> None:
+            p = curve_bounds.interpolate(p, pixel_bounds)
+            size = 8
+
+            a = (p.x - (size / 2), p.y - (size / 2))
+            b = (p.x + (size / 2), p.y + (size / 2))
+
+            image_draw.ellipse([a, b], fill=(255, 0, 0))
+
+        def draw_anchor_line(a: Vector2f, b: Vector2f) -> None:
+            draw_line(a, b, (200, 200, 200))
+
+        def draw_estimated_point(p: Vector2f) -> None:
+            p = curve_bounds.interpolate(p, pixel_bounds)
+            size = 10
+
+            image_draw.line(
+                [(p.x, p.y - size), (p.x, p.y + size)],
+                fill=(255, 0, 255),
+                width=1,
+            )
+
+            image_draw.line(
+                [(p.x - size, p.y), (p.x + size, p.y)],
+                fill=(255, 0, 255),
+                width=1,
+            )
+
+        def draw_line(
+            a: Vector2f,
+            b: Vector2f,
+            fill: tuple[int, int, int],
+            width: int = 1,
+        ) -> None:
+            image_draw.line(
+                (
+                    curve_bounds.interpolate(a, pixel_bounds).vector,
+                    curve_bounds.interpolate(b, pixel_bounds).vector,
+                ),
+                fill=fill,
+                width=width,
+            )
+
+        draw_anchor(self.a0)
+        draw_anchor(self.a1)
+        draw_anchor(self.a2)
+        draw_anchor(self.a3)
+
+        draw_anchor_line(self.a0, self.a1)
+        draw_anchor_line(self.a2, self.a3)
+
+        for line in self.lines(resolution):
+            draw_line(
+                line[0],
+                line[1],
+                (0, 0, 255),
+                width=2,
+            )
+
+        if estimate_y:
+            for x in estimate_y:
+                for y in self.estimate_y(x, resolution=resolution):
+                    draw_estimated_point(Vector2f(x, y))
 
     def estimate_y(
         self,
@@ -58,7 +152,7 @@ class CubicBezier:
 
             previous = point
 
-    def join(self, control: Vector2f, anchor: Vector2f) -> CubicBezier:
+    def join(self, a2: Vector2f, a3: Vector2f) -> CubicBezier:
         """
         Creates a new cubic Bézier curve at the end of this one.
         """
@@ -66,8 +160,8 @@ class CubicBezier:
         return CubicBezier(
             self.a3,
             self.a2.reflect_across(self.a3).vector,
-            control,
-            anchor,
+            a2,
+            a3,
         )
 
     def join_to_start(self, other: CubicBezier) -> CubicBezier:
@@ -99,6 +193,20 @@ class CubicBezier:
         for point in self.points(count + 1, start=1):
             yield prev_end, point
             prev_end = point
+
+    @property
+    def max(self) -> Vector2f:
+        return Vector2f(
+            max(self.a0.x, self.a1.x, self.a2.x, self.a3.x),
+            max(self.a0.y, self.a1.y, self.a2.y, self.a3.y),
+        )
+
+    @property
+    def min(self) -> Vector2f:
+        return Vector2f(
+            min(self.a0.x, self.a1.x, self.a2.x, self.a3.x),
+            min(self.a0.y, self.a1.y, self.a2.y, self.a3.y),
+        )
 
     def points(
         self,
