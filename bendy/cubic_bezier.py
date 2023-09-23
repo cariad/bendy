@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import floor
 from typing import Any, Iterable, Iterator
 
 from vecked import Region2f, Vector2f
@@ -40,6 +41,7 @@ class CubicBezier:
         self,
         image_draw: Any,
         pixel_bounds: Region2f,
+        axis: bool = False,
         curve_bounds: Region2f | None = None,
         resolution: int = 100,
         estimate_y: Iterable[float] | None = None,
@@ -55,6 +57,15 @@ class CubicBezier:
             raise TypeError("image_draw is not PIL.ImageDraw")
 
         curve_bounds = curve_bounds or self.bounds
+
+        if axis:
+            self.draw_axis(
+                image_draw,
+                curve_bounds,
+                pixel_bounds,
+                self.min,
+                self.max,
+            )
 
         def draw_anchor(p: Vector2f) -> None:
             p = curve_bounds.interpolate(p, pixel_bounds)
@@ -119,6 +130,110 @@ class CubicBezier:
             for x in estimate_y:
                 for y in self.estimate_y(x, resolution=resolution):
                     draw_estimated_point(Vector2f(x, y))
+
+    @staticmethod
+    def draw_axis(
+        image_draw: Any,
+        curve_bounds: Region2f,
+        pixel_bounds: Region2f,
+        minimum: Vector2f,
+        maximum: Vector2f,
+    ) -> None:
+        try:
+            from PIL.ImageDraw import ImageDraw
+        except ImportError:  # pragma: no cover
+            msg = "Install `bendy[draw]` to enable drawing."  # pragma: no cover
+            logger.error(msg)  # pragma: no cover
+            raise  # pragma: no cover
+
+        if not isinstance(image_draw, ImageDraw):
+            raise TypeError("image_draw is not PIL.ImageDraw")
+
+        curve_bounds = curve_bounds.accommodate(Vector2f(0, 0))
+
+        def draw_axis_line(
+            a: Vector2f,
+            b: Vector2f,
+            a_pixel_offset: Vector2f = Vector2f(0, 0),
+            b_pixel_offset: Vector2f = Vector2f(0, 0),
+        ) -> None:
+            a = curve_bounds.interpolate(a, pixel_bounds) + a_pixel_offset
+            b = curve_bounds.interpolate(b, pixel_bounds) + b_pixel_offset
+
+            image_draw.line(
+                (a.vector, b.vector),
+                fill=(0, 0, 0),
+                width=1,
+            )
+
+        def draw_text(p: Vector2f, pixel_offset: Vector2f, text: str) -> None:
+            p = curve_bounds.interpolate(p, pixel_bounds) + pixel_offset
+
+            image_draw.text(
+                p.vector,
+                text,
+                fill="black",
+            )
+
+        # Y
+        min_y = min(minimum.y, 0)
+        max_y = max(maximum.y, 0)
+
+        draw_axis_line(
+            Vector2f(0, min_y),
+            Vector2f(0, max_y),
+        )
+
+        y_axis_min = floor(min_y)
+        y_axis_max = floor(max_y + 1)
+        y_axis_tick_count = 10
+        y_axis_tick_gap = floor((max_y - min_y) / y_axis_tick_count)
+
+        for i in range(y_axis_min, y_axis_max, y_axis_tick_gap):
+            draw_axis_line(
+                Vector2f(0, i),
+                Vector2f(0, i),
+                a_pixel_offset=Vector2f(-5, 0),
+            )
+
+            text = str(i)
+            bound = image_draw.textbbox((0, 0), text)
+
+            draw_text(
+                Vector2f(-bound[2], i),
+                Vector2f(-10, -5),
+                text,
+            )
+
+        # X
+        min_x = min(minimum.x, 0)
+        max_x = max(maximum.x, 0)
+
+        draw_axis_line(
+            Vector2f(min_x, 0),
+            Vector2f(max_x, 0),
+        )
+
+        x_axis_min = floor(min_x)
+        x_axis_max = floor(max_x + 1)
+        x_axis_tick_count = 10
+        x_axis_tick_gap = floor((max_x - min_x) / x_axis_tick_count)
+
+        for i in range(x_axis_min, x_axis_max, x_axis_tick_gap):
+            draw_axis_line(
+                Vector2f(i, 0),
+                Vector2f(i, 0),
+                b_pixel_offset=Vector2f(0, 5),
+            )
+
+            text = str(i)
+            bound = image_draw.textbbox((0, 0), text)
+
+            draw_text(
+                Vector2f(i - (bound[2] / 2), 0),
+                Vector2f(0, 10),
+                text,
+            )
 
     def estimate_y(
         self,

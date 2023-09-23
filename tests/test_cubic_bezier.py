@@ -12,6 +12,7 @@ def draw_composite_cubic_bezier_curve(
     composite: CompositeCubicBezier,
     name: str,
     resolution: int,
+    axis: bool = False,
 ) -> None:
     margin = 50
     width = 500
@@ -19,12 +20,10 @@ def draw_composite_cubic_bezier_curve(
     position = Vector2f(margin, margin)
     size = Vector2f(width, width) - position - position
 
-    region = Region2f(
-        position,
-        size,
-    )
+    # Flip upside-down so (0, 0) is at the bottom.
+    region = Region2f(position, size).upside_down()
 
-    for count in range(1, len(composite)):
+    for count in range(1, len(composite) + 1):
         image = Image.new(
             "RGB",
             (width, width),
@@ -36,6 +35,7 @@ def draw_composite_cubic_bezier_curve(
         composite.draw(
             draw,
             region,
+            axis=axis,
             count=count,
             estimate_y=range(floor(composite.min.x), ceil(composite.max.x) + 1, 25),
             resolution=resolution,
@@ -54,6 +54,7 @@ def draw_cubic_bezier_curve(
     curve: CubicBezier,
     name: str,
     resolution: int,
+    axis: bool = False,
     est_y: bool = True,
 ) -> None:
     margin = 50
@@ -62,10 +63,8 @@ def draw_cubic_bezier_curve(
     position = Vector2f(margin, margin)
     size = Vector2f(width, width) - position - position
 
-    region = Region2f(
-        position,
-        size,
-    )
+    # Flip upside-down so (0, 0) is at the bottom.
+    region = Region2f(position, size).upside_down()
 
     image = Image.new(
         "RGB",
@@ -88,6 +87,7 @@ def draw_cubic_bezier_curve(
     curve.draw(
         draw,
         region,
+        axis=axis,
         estimate_y=estimate_y_range,
         resolution=resolution,
     )
@@ -107,6 +107,7 @@ def test_draw(cubic_bezier: CubicBezier) -> None:
     draw_cubic_bezier_curve(cubic_bezier, "s", 10)
     draw_cubic_bezier_curve(cubic_bezier, "s", 100)
     draw_cubic_bezier_curve(cubic_bezier, "s-plain", 100, est_y=False)
+    draw_cubic_bezier_curve(cubic_bezier, "s-axis", 100, axis=True)
 
     figure_8 = CompositeCubicBezier(
         CubicBezier(
@@ -121,6 +122,7 @@ def test_draw(cubic_bezier: CubicBezier) -> None:
     figure_8.loop()
 
     draw_composite_cubic_bezier_curve(figure_8, "figure8", 100)
+    draw_composite_cubic_bezier_curve(figure_8, "figure8-axis", 100, axis=True)
 
 
 def test_draw__not_draw(cubic_bezier: CubicBezier) -> None:
@@ -128,6 +130,19 @@ def test_draw__not_draw(cubic_bezier: CubicBezier) -> None:
         cubic_bezier.draw(
             "pizza",
             Region2f(Vector2f(0, 0), Vector2f(1, 1)),
+        )
+
+    assert str(ex.value) == "image_draw is not PIL.ImageDraw"
+
+
+def test_draw_axis__not_draw() -> None:
+    with raises(TypeError) as ex:
+        CubicBezier.draw_axis(
+            "pizza",
+            Region2f(Vector2f(0, 0), Vector2f(1, 1)),
+            Region2f(Vector2f(0, 0), Vector2f(1, 1)),
+            Vector2f(0, 0),
+            Vector2f(0, 0),
         )
 
     assert str(ex.value) == "image_draw is not PIL.ImageDraw"
