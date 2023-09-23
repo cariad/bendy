@@ -3,6 +3,7 @@ from typing import Any, Iterable, Iterator
 from vecked import Region2f, Vector2f
 
 from bendy.cubic_bezier import CubicBezier
+from bendy.logging import logger
 
 
 class CompositeCubicBezier:
@@ -37,8 +38,26 @@ class CompositeCubicBezier:
         count: int | None = None,
         estimate_y: Iterable[float] | None = None,
         resolution: int = 100,
+        title: str | None = None,
     ) -> None:
+        try:
+            from PIL.ImageDraw import ImageDraw
+        except ImportError:  # pragma: no cover
+            msg = "Install `bendy[draw]` to enable drawing."  # pragma: no cover
+            logger.error(msg)  # pragma: no cover
+            raise  # pragma: no cover
+
+        if not isinstance(image_draw, ImageDraw):
+            raise TypeError("image_draw is not PIL.ImageDraw")
+
         curve_bounds = self.bounds.accommodate(Vector2f(0, 0))
+
+        if title:
+            image_draw.text(
+                (Vector2f(20, pixel_bounds.top - 30)).vector,
+                title,
+                fill="black",
+            )
 
         if axis:
             CubicBezier.draw_axis(

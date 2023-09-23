@@ -2,6 +2,7 @@ from math import ceil, floor
 from pathlib import Path
 
 from PIL import Image, ImageDraw
+from pytest import raises
 from vecked import Region2f, Vector2f
 
 from bendy import CompositeCubicBezier
@@ -12,6 +13,7 @@ def draw_composite(
     name: str,
     resolution: int,
     axis: bool = False,
+    title: str | None = None,
 ) -> None:
     margin = 50
     width = 500
@@ -38,6 +40,7 @@ def draw_composite(
             count=count,
             estimate_y=range(floor(composite.min.x), ceil(composite.max.x) + 1, 25),
             resolution=resolution,
+            title=title,
         )
 
         filename = "%s_r%i_%i.png" % (
@@ -51,7 +54,24 @@ def draw_composite(
 
 def test_draw(figure_8: CompositeCubicBezier) -> None:
     draw_composite(figure_8, "figure8", 100)
-    draw_composite(figure_8, "figure8-axis", 100, axis=True)
+
+    draw_composite(
+        figure_8,
+        "figure8-axis",
+        100,
+        axis=True,
+        title="Figure 8",
+    )
+
+
+def test_draw__not_draw(figure_8: CompositeCubicBezier) -> None:
+    with raises(TypeError) as ex:
+        figure_8.draw(
+            "pizza",
+            Region2f(Vector2f(0, 0), Vector2f(1, 1)),
+        )
+
+    assert str(ex.value) == "image_draw is not PIL.ImageDraw"
 
 
 def test_estimate_y(figure_8: CompositeCubicBezier) -> None:
